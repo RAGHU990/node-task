@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
+import dotenv from 'dotenv';
+dotenv.config();
+
+
 
 export default class UserController {
 
@@ -25,13 +30,18 @@ export default class UserController {
     }
   }
 
-  static async createUser(req: Request, res: Response) {
-    const userData = req.body;
+  static async createUser(req: Request, res: Response): Promise<void> {
     try {
-      const newUser = await User.create(userData);
-      res.status(201).json(newUser);
+      const userData = req.body;     
+       const newUser = await User.create(userData);
+      
+      // Generate JWT token with user data and set expiration to 30 days
+      const token = jwt.sign({ email: userData.email, phone: userData.phone }, 'process.env.JWT_SECRET', { expiresIn: '30d' });
+  
+      res.status(201).json({ user: newUser, token });
     } catch (error) {
-      res.status(400).json({ message: 'Bad Request' });
+      console.error('Error creating user:', error);
+      res.status(400).json({ message: error || 'Bad Request' });
     }
   }
 
